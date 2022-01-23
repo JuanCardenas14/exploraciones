@@ -3,7 +3,7 @@ library(shiny)
 
 ui <- fluidPage(
   
-  titlePanel("Calculadora cronicos"),
+  titlePanel("Calculadora"),
   
   sidebarPanel(
     selectInput(inputId = "sex", label = "Sexo", 
