@@ -37,16 +37,34 @@ ui <- fluidPage(
     checkboxInput("diabetico", "Diabetes", FALSE),
     numericInput(inputId = "pas", label = "Systolic blood pressure", 
                  value = 120),
-    checkboxInput("bpmed", "Hypertension treatment", FALSE),
-    textOutput(outputId = "framingham"), 
-    textOutput(outputId = "est_gfr")
-  ))
+    checkboxInput("bpmed", "Tratamiento antihipertensivo", FALSE),
+  )
+  ),
+  fluidRow(
+    h4(textOutput(outputId = "framingham")), 
+    h4(textOutput(outputId = "est_gfr"))
+  )
+  
+  
 )
 
 
 server <- function(input, output) {
+  
+  friedewald <- function(total_cholesterol, hdl_cholesterol, triglycerides) {
+    if (triglycerides >= 400) {
+      return("No calculable")
+    }
+    else {
+      ldl_cholesterol <- (total_cholesterol - hdl_cholesterol) - (triglycerides/5)
+      return(ldl_cholesterol)
+    }
+  }
+  
   output$LDL <- reactive(paste( "Colesterol LDL: ",
-                                (input$col_tot - input$col_hdl) - (input$trigs/5)))
+                                friedewald(total_cholesterol = input$col_tot,
+                                           hdl_cholesterol = input$col_hdl,
+                                           triglycerides = input$trigs)))
   
   fumador1 <- reactive({as.numeric(input$fumador)})
   bpmed1 <- reactive ({as.numeric (input$bpmed)})
@@ -62,7 +80,8 @@ server <- function(input, output) {
                                    smoker = fumador1(),
                                    diabetes = diabetico1())})
   
-  output$framingham <- renderText(paste("Riesgo cardiovascular (Framingham):", ascvd(), "%"))
+  output$framingham <- renderText(paste("Riesgo cardiovascular (Framingham):", ascvd(), "%. Ajustado a Colombia:",
+                                        round((0.75*ascvd()), 2), "%"))
 
   
   ckdepi_2021 <- function(sex, scr, age) {
@@ -80,17 +99,25 @@ server <- function(input, output) {
     #calcular tfg estimada
     egfr <- 142*((min(scr/k, 1))^alpha)*((max(scr/k, 1))^-1.200)*(0.9938^age)*extra
     
-    return(round(egfr, 1))
+    #clasificar estadio
+    if (egfr>=90) {e <- "G1"}
+    else if (egfr >= 60) {e <- "G2"}
+    else if (egfr >= 45) {e <- "G3a"}
+    else if (egfr >= 30) {e <- "G3b"}
+    else if (egfr >= 15) {e <- "G4"}
+    else if (egfr < 15) {e <- "G5"}
+
+    return (paste((round(egfr, 1)), "mL/min/m2. Estadío", e))
   }
   
   ckdepi <- reactive(ckdepi_2021(sex = input$sex, age = input$age, scr = input$creatinine))
   
-  output$est_gfr <- renderText(paste("Tasa de filtración glomerular: ",ckdepi(), "mL/min/m2"))
+  
+  output$est_gfr <- renderText(paste("Tasa de filtración glomerular: ",ckdepi()))
 
   
   
 }
-
 
 
 # Run the application 
