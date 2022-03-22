@@ -1,10 +1,13 @@
 library(shiny)
 library(CVrisk)
+library(dplyr)
 
 
 ui <- fluidPage(
   
-  titlePanel("Calculadora"),
+  titlePanel("Calculadora crónicos"),
+  
+  h6("Juan Camilo Cárdenas"),
   
   fluidRow(
     
@@ -24,7 +27,7 @@ ui <- fluidPage(
                  value = 190),
     numericInput(inputId = "col_hdl", label = "Colesterol HDL",
                  value = 30),
-    numericInput(inputId = "trigs", label = "Trigliceridos",
+    numericInput(inputId = "trigs", label = "Triglicéridos",
                  value = 150),
     textOutput(outputId = "LDL")
     
@@ -69,7 +72,7 @@ server <- function(input, output) {
   fumador1 <- reactive({as.numeric(input$fumador)})
   bpmed1 <- reactive ({as.numeric (input$bpmed)})
   diabetico1 <- reactive({as.numeric (input$diabetico)})
-  
+
   
   ascvd <- reactive({ascvd_10y_frs(gender = input$sex,
                                    age = input$age,
@@ -80,7 +83,7 @@ server <- function(input, output) {
                                    smoker = fumador1(),
                                    diabetes = diabetico1())})
   
-  output$framingham <- renderText(paste("Riesgo cardiovascular (Framingham):", ascvd(), "%. Ajustado a Colombia:",
+  output$framingham <- renderText(paste("Riesgo cardiovascular (Framingham 2008):", ascvd(), "%. Ajustado a Colombia:",
                                         round((0.75*ascvd()), 2), "%"))
 
   
@@ -107,13 +110,13 @@ server <- function(input, output) {
     else if (egfr >= 15) {e <- "G4"}
     else if (egfr < 15) {e <- "G5"}
 
-    return (paste((round(egfr, 1)), "mL/min/m2. Estadío", e))
+    return (paste((round(egfr, 1)), "mL/min/1.73 m2. Estadío", e))
   }
   
   ckdepi <- reactive(ckdepi_2021(sex = input$sex, age = input$age, scr = input$creatinine))
   
   
-  output$est_gfr <- renderText(paste("Tasa de filtración glomerular: ",ckdepi()))
+  output$est_gfr <- renderText(paste("Tasa de filtración glomerular estimada (CKD-EPI 2021): ",ckdepi()))
 
   
   
