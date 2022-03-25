@@ -76,15 +76,50 @@ ui <- fluidPage(
            )
     ),
   fluidRow(
+    column(3, h4("Functional Ambulation Category")),
+    column(9, h4("Downton Fall Risk Index"))
+    ),
+  fluidRow(
+    column(3,
+           radioButtons(inputId = "fac_category", label = "Categoría FAC", 
+                        choices = c("Incapacidad absoluta", "Dependiente continuo", "Dependiente intermitente", "Dependiente supervisado",
+                                    "Independiente en plano", "Independiente"), 
+                        selected = "Independiente")),
+    column(3,
+           checkboxInput(inputId = "falls", label = "Caídas previas", value = FALSE),
+           radioButtons(inputId = "gait_downton", label = "Marcha", 
+                        choices = c("Normal", "Insegura"), 
+                        selected = "Normal")
+           ),
+    column(3,
+           checkboxGroupInput(inputId = "meds", label = "Medicamentos", 
+                        choiceNames = c("Sedantes", "Diuréticos", "Otros antihipertensivos", "Antiparkisonsianos", "Antidepresivos", "Otros"),
+                        choiceValues = c(1, 1, 1, 1, 1, 1))
+           ),
+    column(3,
+           checkboxGroupInput(inputId = "sensory_deficit", label = "Déficit sensorial", 
+                        choiceNames = c("Vista", "Audición", "Extremidades"), 
+                        choiceValues = c(1,1, 1)),
+           radioButtons(inputId = "mental_status", label = "Estado mental", 
+                        choices = c("Orientado", "Confuso"), 
+                        selected = "Orientado")
+           )
+  ),
+  fluidRow(
     h4(textOutput(outputId = "barthel")),
     h4(textOutput(outputId = "braden_unzipped")),
-    h4 (textOutput(outputId = "braden"))
+    h4 (textOutput(outputId = "braden")),
+    h4 (textOutput(outputId = "fac")),
+    h4 (textOutput(outputId = "dfri"))
   )
 )
 
   
 
 server <- function(input, output) {
+  
+  # Barthel
+  
   alimentacion <- c("Independiente" = 10, "Necesita ayuda" = 5, "Dependiente" = 0)
   bano <- c("Independiente" = 5, "Dependiente" = 0)
   arreglarse <- c("Independiente" = 5, "Dependiente" = 0)
@@ -119,6 +154,8 @@ server <- function(input, output) {
     else if (b < 20) {e <- "Dependencia total"}
     return (e)
   }
+  
+  # Braden 
   
   percep_sens <- c("Sin limitaciones" = 4, "Ligeramente limitada" = 3, " Muy limitada" = 2, "Completamente limitada" = 1)
   humedad <- c("Raramente" = 4, "Ocasionalmente" = 3, "A menudo" = 2, "Constantemente" = 1)
@@ -155,7 +192,36 @@ server <- function(input, output) {
     else if (b <= 17) {e <- "Riesgo leve"}
     else if (b >= 18) {e <- "Riesgo promedio"}
     return (e)
-    }
+  }
+  
+  # FAC scale
+  
+  functional_ambulation_scale <- c("Incapacidad absoluta" = 0 , "Dependiente continuo" = 1, "Dependiente intermitente" = 2,
+                                   "Dependiente supervisado" = 3,  "Independiente en plano" = 4, "Independiente" = 5)
+  
+  FAC_escala <- reactive(functional_ambulation_scale[input$fac_category])
+  
+  output$fac <- renderText(paste("FAC:", FAC_escala()))
+  
+  
+  # Downton Fall Risk Index
+  
+  marcha_downton <- c ("Normal" = 0, "Insegura" = 1)
+  
+  estado_mental_dowton <- c ("Orientado" = 0, "Confuso" = 1)
+  
+  falls_dfri <- reactive(as.numeric(input$falls))
+  sens_def_dfri <- reactive(as.numeric(input$sensory_deficit))
+  meds_dfri <- reactive(as.numeric(input$meds))
+  
+  
+  downton_FRI <- reactive(sum(falls_dfri(), meds_dfri(), sens_def_dfri(),  
+                              marcha_downton[input$gait_downton], 
+                              estado_mental_dowton[input$mental_status]))
+                          
+
+  output$dfri <- renderText(paste("Downton:", downton_FRI()))
+  
   }
   
 
