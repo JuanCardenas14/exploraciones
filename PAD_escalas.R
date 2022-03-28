@@ -77,7 +77,8 @@ ui <- fluidPage(
     ),
   fluidRow(
     column(3, h4("Functional Ambulation Category")),
-    column(9, h4("Downton Fall Risk Index"))
+    column(6, h4("Downton Fall Risk Index")), 
+    column(3, h4("ECOG Performance Status Scale"))
     ),
   fluidRow(
     column(3,
@@ -85,24 +86,30 @@ ui <- fluidPage(
                         choices = c("Incapacidad absoluta", "Dependiente continuo", "Dependiente intermitente", "Dependiente supervisado",
                                     "Independiente en plano", "Independiente"), 
                         selected = "Independiente")),
-    column(3,
+    column(2,
            checkboxInput(inputId = "falls", label = "Caídas previas", value = FALSE),
            radioButtons(inputId = "gait_downton", label = "Marcha", 
                         choices = c("Normal", "Insegura"), 
                         selected = "Normal")
            ),
-    column(3,
+    column(2,
            checkboxGroupInput(inputId = "meds", label = "Medicamentos", 
                         choiceNames = c("Sedantes", "Diuréticos", "Otros antihipertensivos", "Antiparkisonsianos", "Antidepresivos", "Otros"),
                         choiceValues = c(1, 1, 1, 1, 1, 1))
            ),
-    column(3,
+    column(2,
            checkboxGroupInput(inputId = "sensory_deficit", label = "Déficit sensorial", 
                         choiceNames = c("Vista", "Audición", "Extremidades"), 
                         choiceValues = c(1,1, 1)),
            radioButtons(inputId = "mental_status", label = "Estado mental", 
                         choices = c("Orientado", "Confuso"), 
                         selected = "Orientado")
+           ),
+    column(3,
+           radioButtons(inputId = "ecog", label = "ECOG", 
+                        choiceNames = c("Asintomático", "Sintomático ambulatorio", "Postrado menos 50%", 
+                                    "Postrado más 50%, requiere asistencia parcial", "Postrado 100%, incapacidad total"),
+                        choiceValues = c(0, 1, 2, 3, 4))
            )
   ),
   fluidRow(
@@ -110,7 +117,8 @@ ui <- fluidPage(
     h4(textOutput(outputId = "braden_unzipped")),
     h4 (textOutput(outputId = "braden")),
     h4 (textOutput(outputId = "fac")),
-    h4 (textOutput(outputId = "dfri"))
+    h4 (textOutput(outputId = "dfri")),
+    h4 (textOutput(outputId = "ecog"))
   )
 )
 
@@ -221,6 +229,12 @@ server <- function(input, output) {
                           
 
   output$dfri <- renderText(paste("Downton:", downton_FRI()))
+  
+  # ECOG performance scale
+  
+  ecog_value <- reactive(as.numeric(input$ecog))
+
+  output$ecog <- renderText(paste("ECOG:", ecog_value()))
   
   }
   
